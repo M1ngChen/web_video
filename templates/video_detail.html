@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}{{ video.title }}{% endblock %}
+
+{% block content %}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div class="relative video-container bg-gray-900">
+                    <video controls poster="{{ url_for('static', filename='uploads/thumbnails/' + video.thumbnail) }}" 
+                           class="w-full h-full object-contain">
+                        <source src="{{ url_for('static', filename='uploads/videos/' + video.filename) }}" type="video/mp4">
+                        您的浏览器不支持视频播放。
+                    </video>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h1 class="text-2xl font-bold text-gray-800 mb-4">{{ video.title }}</h1>
+                
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+                    <div class="flex items-center mb-4 sm:mb-0">
+                        <img src="https://picsum.photos/48/48?random={{ video.user.id }}" alt="{{ video.user.username }}" class="w-10 h-10 rounded-full mr-3">
+                        <div>
+                            <h3 class="font-medium text-gray-800">{{ video.user.username }}</h3>
+                            <p class="text-sm text-gray-500">发布于 {{ video.upload_date.strftime('%Y-%m-%d') }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-3">
+                        <button class="flex items-center px-4 py-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors">
+                            <i class="fa fa-thumbs-up mr-2 text-gray-600"></i>
+                            <span>点赞</span>
+                        </button>
+                        <button class="flex items-center px-4 py-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors">
+                            <i class="fa fa-share mr-2 text-gray-600"></i>
+                            <span>分享</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="border-t border-gray-100 pt-6">
+                    <h3 class="font-medium text-gray-800 mb-3">视频描述</h3>
+                    <p class="text-gray-600 mb-4">{{ video.description }}</p>
+                    
+                    <div class="flex items-center text-sm text-gray-500">
+                        <span class="mr-4"><i class="fa fa-eye mr-1"></i> {{ video.views }} 次观看</span>
+                        <span><i class="fa fa-film mr-1"></i> {{ video.category.name }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 评论区 -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h3 class="font-medium text-gray-800 mb-6">评论 (0)</h3>
+                
+                <div class="mb-6">
+                    <div class="flex items-start space-x-3">
+                        <img src="https://picsum.photos/40/40?random=user" alt="Your avatar" class="w-10 h-10 rounded-full">
+                        <div class="flex-1">
+                            <textarea class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                                      rows="3" placeholder="发表评论..."></textarea>
+                            <div class="flex justify-end mt-2">
+                                <button class="btn-primary">
+                                    <i class="fa fa-paper-plane mr-2"></i> 发布评论
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center text-gray-500 py-8">
+                    <i class="fa fa-comment-o text-3xl mb-3"></i>
+                    <p>暂无评论，快来发表第一条评论吧！</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 推荐视频 -->
+        <div class="space-y-6">
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h3 class="font-medium text-gray-800 mb-4">推荐视频</h3>
+                
+                <div class="space-y-4">
+                    {% for related_video in videos[:5] %}
+                        {% if related_video.id != video.id %}
+                            <a href="{{ url_for('video_detail', video_id=related_video.id) }}" class="flex space-x-3 group">
+                                <img src="{{ url_for('static', filename='uploads/thumbnails/' + related_video.thumbnail) }}" 
+                                     alt="{{ related_video.title }}" class="w-24 h-16 object-cover rounded-lg">
+                                <div class="flex-1">
+                                    <h4 class="font-medium text-gray-800 text-sm group-hover:text-primary transition-colors line-clamp-2">
+                                        {{ related_video.title }}
+                                    </h4>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        {{ related_video.user.username }} · {{ related_video.views }} 次观看
+                                    </p>
+                                </div>
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- 热门分类 -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h3 class="font-medium text-gray-800 mb-4">热门分类</h3>
+                
+                <div class="flex flex-wrap gap-2">
+                    {% for category in categories[:8] %}
+                        <a href="{{ url_for('index', category=category.id) }}" 
+                           class="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-sm hover:bg-primary hover:text-white transition-colors">
+                            {{ category.name }}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}    
