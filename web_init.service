@@ -1,0 +1,11 @@
+[Unit]
+Description= "web app run script"
+
+[Service]
+ExecStart=/home/invis/app
+Restart=always
+Type=simple
+
+[Install]
+WantedBy=multi-user.target
+

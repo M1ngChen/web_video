@@ -1,7 +1,12 @@
 {% extends "base.html" %}
 
 {% block title %}{{ video.title }}{% endblock %}
-
+<!-- 在视频详情页合适位置添加 -->
+{% if session.user_id == video.user_id %}
+    <form action="{{ url_for('delete_video', video_id=video.id) }}" method="post" onsubmit="return confirm('确定要删除这个视频吗？此操作不可恢复！');">
+        <button type="submit" class="btn btn-danger">删除视频</button>
+    </form>
+{% endif %}
 {% block content %}
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 space-y-6">
@@ -28,28 +33,14 @@
                     </div>
                     
                     <div class="flex space-x-3">
-                        <!-- 点赞按钮 -->
                         <button class="flex items-center px-4 py-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors">
                             <i class="fa fa-thumbs-up mr-2 text-gray-600"></i>
                             <span>点赞</span>
                         </button>
-                        <!-- 分享按钮 -->
                         <button class="flex items-center px-4 py-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors">
                             <i class="fa fa-share mr-2 text-gray-600"></i>
                             <span>分享</span>
                         </button>
-                        <!-- 删除按钮：仅视频上传者可见 -->
-                        {% if session.user_id == video.user_id %}
-                            <button type="button" class="flex items-center px-4 py-2 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition-colors"
-                                    onclick="document.getElementById('deleteForm').submit()">
-                                <i class="fa fa-trash mr-2"></i>
-                                <span>删除</span>
-                            </button>
-                            <!-- 隐藏的删除表单 -->
-                            <form id="deleteForm" action="{{ url_for('delete_video', video_id=video.id) }}" method="post" style="display: none;">
-                                <!-- 防止CSRF攻击（如果使用Flask-WTF可添加csrf_token） -->
-                            </form>
-                        {% endif %}
                     </div>
                 </div>
                 
@@ -130,4 +121,4 @@
             </div>
         </div>
     </div>
-{% endblock %}
+{% endblock %}    

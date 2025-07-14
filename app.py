@@ -51,7 +51,7 @@ class Video(db.Model):
     
     
     
-categories_list = ['电影', 'RAG', '纪录片', '动漫', '综艺', '教育', '音乐', '游戏', '科技', '其他']
+categories_list = ['电影','动漫']
 categories_dict = {}
 # 初始化分类数据
 def init_categories():
@@ -62,7 +62,7 @@ def init_categories():
             db.session.add(category)
     db.session.commit()
 
-# 自定义路由：返回默认缩略图
+# 自定义路由：返回默认缩略图：
 @app.route('/thumbnails/default')
 def get_default_thumbnail():
     # 1. 定义图片所在的绝对路径
@@ -230,6 +230,44 @@ def video_detail(video_id):
     
     return render_template('video_detail.html', video=video, videos=related_videos, categories=categories)
 
+@app.route('/video/<int:video_id>/delete', methods=['POST'])
+def delete_video(video_id):
+    # 1. 验证用户是否登录
+    if 'user_id' not in session:
+        flash('请先登录', 'error')
+        return redirect(url_for('login'))
+    
+    # 2. 获取视频并验证是否存在
+    video = Video.query.get_or_404(video_id)
+    
+    # 3. 验证权限（只有上传者才能删除）
+    if video.user_id != session['user_id']:
+        abort(403)  # 权限不足
+    
+    # 4. 物理删除视频文件和缩略图
+    try:
+        # 删除视频文件
+        video_path = os.path.join(app.config['UPLOAD_FOLDER'], video.filename)
+        if os.path.exists(video_path):
+            os.remove(video_path)
+        
+        # 删除缩略图（跳过默认缩略图）
+        if video.thumbnail != 'default_thumbnail.jpg':
+            thumbnail_path = os.path.join(app.config['THUMBNAIL_FOLDER'], video.thumbnail)
+            if os.path.exists(thumbnail_path):
+                os.remove(thumbnail_path)
+    
+    except Exception as e:
+        flash(f'文件删除失败：{str(e)}', 'error')
+        return redirect(url_for('video_detail', video_id=video_id))
+    
+    # 5. 从数据库删除记录
+    db.session.delete(video)
+    db.session.commit()
+    
+    flash('视频已成功删除', 'success')
+    return redirect(url_for('index'))
+
 def handle_new_video_in_fixed_folder(path):
     if not os.path.exists(path):
         # 不存在则创建
@@ -254,7 +292,8 @@ def save_file(file_path) -> str:
     return video_path
 
 def save_thumbnail(new_file_path) -> str:
-    path = os.path.splitext(new_file_path)[0]
+    path = os.path.split(new_file_path)[1]
+    path = os.path.splitext(path)[0]
     thumbnail_filename = f"{path}.jpg"
     thumbnail_path = os.path.join(app.config['THUMBNAIL_FOLDER'], thumbnail_filename)
     extract_middle_frame(new_file_path,thumbnail_path)
@@ -321,11 +360,33 @@ def traverse_directory(root_dir):
             traverse_second_directory(dirname,os.path.join(dirpath, dirname))    
         return
 
+def clean_old_categories():
+    """删除不在categories_list中的分类（保留列表内的分类）"""
+    # 1. 获取所有当前数据库中的分类
+    all_categories = Category.query.all()
+    
+    # 2. 提取预设分类列表中的名称（用于比对）
+    valid_category_names = set(categories_list)
+    
+    # 3. 遍历数据库分类，删除不在预设列表中的分类
+    for category in all_categories:
+        if category.name not in valid_category_names:
+            # 检查该分类下是否有视频（避免删除有视频的分类）
+            if len(category.videos) > 0:
+                print(f"警告：分类 '{category.name}' 下有视频，未删除")
+            else:
+                # 无视频的分类可安全删除
+                db.session.delete(category)
+                print(f"已删除历史分类：{category.name}")
+    
+    db.session.commit()
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
         init_categories()
-        
+        clean_old_categories()
+
         for list in categories_list:
             category = Category.query.filter_by(name=list).first()
             if category:
