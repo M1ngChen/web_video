@@ -1,10 +1,15 @@
 [Unit]
-Description= "web app run script"
+Description=web app run script
+After=network-online.target
+Wants=network-online.target
 
 [Service]
-ExecStart=/home/invis/app
-Restart=always
-Type=simple
+ExecStart=/root/video/run.sh
+WorkingDirectory=/root/video/
+Type=ont-shot
+RemainAfterExit=yes
+User=root
+Group=root
 
 [Install]
 WantedBy=multi-user.target
